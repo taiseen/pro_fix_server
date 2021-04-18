@@ -42,27 +42,29 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 client.connect(err => {
 
-    const servicesCollection = client.db(`${process.env.DB_NAME}`).collection(`${process.env.DB_SERVICES}`);
     const reviewsCollection = client.db(`${process.env.DB_NAME}`).collection(`${process.env.DB_REVIEWS}`);
+    const servicesCollection = client.db(`${process.env.DB_NAME}`).collection(`${process.env.DB_SERVICES}`);
     const adminEmailCollection = client.db(`${process.env.DB_NAME}`).collection(`${process.env.DB_ADMIN_EMAIL}`);
+    const serviceRequestCollection = client.db(`${process.env.DB_NAME}`).collection(`${process.env.DB_SERVICE_REQUEST}`);
 
+
+    // Admin Side | API 
+    //#################################################################
+    //#################################################################
+    //#################################################################
 
     // For Making Admin (Email)
     // Create || POST operation
     //#################################################################
     app.post('/addAdmin', (req, res) => {
         const adminEmail = req.body;
-        console.log(adminEmail);
         adminEmailCollection.insertOne(adminEmail)
             .then(result => {
                 // send to clint a true||false sms
-                //res.status(200).send(result.insertedCount > 0);
                 res.send(result.insertedCount > 0);
-                console.log(result.insertedCount > 0);
             })
     });
     //#################################################################
-
 
 
     // For Creating New Service | Admin Section
@@ -70,33 +72,32 @@ client.connect(err => {
     //#################################################################
     app.post('/addService', (req, res) => {
         const service = req.body;
-        //console.log(service);
         servicesCollection.insertOne(service)
             .then(result => {
                 // send to clint a true||false sms
                 res.send(result.insertedCount > 0);
-                //console.log(result.insertedCount > 0);
             })
+    });
+    //#################################################################
+
+    // For Deleting Client Services by Admin 
+    // Delete || Delete operation  
+    //#################################################################
+    app.delete('/deleteClientService/:id', (req, res) => {
+        const serviceID = req.params.id;
+        serviceRequestCollection.deleteOne({ _id: ObjectID(serviceID) })
+            .then(result => {
+                res.send(result.deletedCount > 0);
+            });
     });
     //#################################################################
 
 
 
-    // // Delete || Delete operation  ==> for Books
-    // //#################################################################
-    // app.delete('/deleteClientService/:id', (req, res) => {
-    //     const bookId = req.params.id;
-    //     console.log(bookId);
-
-    //     //res.send(true);
-    //     booksCollection.deleteOne({ _id: ObjectID(bookId) })
-    //         .then(result => {
-    //             res.send(result.deletedCount > 0);
-    //             console.log(result.deletedCount);
-    //         });
-    // });
-
-
+    // Home Page | API 
+    //#################################################################
+    //#################################################################
+    //#################################################################
 
     // For Home Page, Display Create Services by Admin
     // Read || GET operation
@@ -105,7 +106,6 @@ client.connect(err => {
         servicesCollection.find({})
             .toArray((err, services) => {
                 res.send(services);
-                //console.log(services);
             });
     });
     //#################################################################
@@ -118,7 +118,6 @@ client.connect(err => {
         reviewsCollection.find({})
             .toArray((err, reviews) => {
                 res.send(reviews);
-                //console.log(reviews);
             });
     });
     //#################################################################
@@ -126,11 +125,7 @@ client.connect(err => {
 
 
 
-
-
-
-
-    // Client Side    
+    // Client Side | API
     //#################################################################
     //#################################################################
     //#################################################################
@@ -140,50 +135,50 @@ client.connect(err => {
     //#################################################################
     app.post('/review', (req, res) => {
         const review = req.body;
-        console.log(review);
         reviewsCollection.insertOne(review)
             .then(result => {
                 res.send(result.insertedCount > 0);
-                console.log(result.insertedCount > 0);
             });
     });
     //#################################################################
 
 
-
-
-
-
-
-    // Read || GET operation ==> for Order
+    // For User Request Service
+    // Create || POST operation 
+    // #################################################################
+    app.post('/clientRequestService', (req, res) => {
+        const serviceRequest = req.body;
+        serviceRequestCollection.insertOne(serviceRequest)
+            .then(result => {
+                res.send(result.insertedCount > 0);
+            });
+    });
     //#################################################################
-    // app.get('/allOrders', (req, res) => {
-
-    //     // const bearer = req.headers.authorization;
-    //     const userEmail = req.query.email;
-
-    //     orderCollection.find({ email: userEmail })
-    //         .toArray((err, order) => {
-    //             res.send(order);
-    //             console.log(order);
-    //         });
 
 
-    // });
-
-    // Delete || Delete operation  ==> for Books
+    // For Specific User Service Request List
+    // Read || GET operation
     //#################################################################
-    // app.delete('/deleteOrder/:id', (req, res) => {
-    //     const orderId = req.params.id;
-    //     console.log(orderId);
+    app.get('/yourServiceList', (req, res) => {
+        const email = req.query.email;
+        serviceRequestCollection.find({ email: email })
+            .toArray((err, service) => {
+                res.send(service);
+            });
+    });
+    //#################################################################
 
-    //     orderCollection.deleteOne({ _id: ObjectID(orderId) })
-    //         .then(result => {
-    //             res.send(result.deletedCount > 0);
-    //             console.log(result.deletedCount);
-    //         });
 
-    // });
+    // For ALL User Service Request List | (For Admin)
+    // Read || GET operation
+    //#################################################################
+    app.get('/allServiceRequest', (req, res) => {
+        serviceRequestCollection.find({})
+            .toArray((err, service) => {
+                res.send(service);
+            });
+    });
+    //#################################################################
 
 
     console.log("DB connection ==> OK");
