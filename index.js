@@ -122,6 +122,39 @@ client.connect(err => {
     });
     //#################################################################
 
+    // For Home Page, Update Client Service Status
+    // Update || PATCH operation
+    //#################################################################
+    app.patch('/update/:id', (req, res) => {
+
+        const id = req.params.id;
+        const serviceStatus = req.body;
+
+        // console.log(id);
+        // console.log(serviceStatus.status);
+
+        serviceRequestCollection.updateOne({ _id: ObjectID(id) },
+            {
+                $set: {
+                    status: serviceStatus.status
+                }
+            })
+            .then(result => {
+                //console.log(result);
+                res.send(result.modifiedCount > 0);
+            });
+
+        // .findOneAndUpdate(
+        //     { _id: id },
+        //     { $set: { status: serviceStatus.service } }
+        // ).then(result => {
+        //     console.log(result);
+        //     res.send(result)
+        // });
+
+    });
+    //#################################################################
+
 
 
 
